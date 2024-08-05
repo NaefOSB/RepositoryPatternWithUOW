@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using RepositoryPatternWithUOW.Core.Interfaces;
 using RepositoryPatternWithUOW.EF.Data;
+using RepositoryPatternWithUOW.EF.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
+builder.Services.AddTransient(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 
 var app = builder.Build();
 
