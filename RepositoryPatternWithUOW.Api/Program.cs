@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using RepositoryPatternWithUOW.Core.Interfaces;
+using RepositoryPatternWithUOW.Core;
+using RepositoryPatternWithUOW.Core.General;
+using RepositoryPatternWithUOW.EF;
 using RepositoryPatternWithUOW.EF.Data;
-using RepositoryPatternWithUOW.EF.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,14 +13,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Connection To Sql Server
+// Adding Dependency injections of Core layer
+builder.Services.AddCoreDependencies();
 
+// Connection To Sql Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-builder.Services.AddTransient(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+//builder.Services.AddTransient(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
 
 var app = builder.Build();
 

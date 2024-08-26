@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using RepositoryPatternWithUOW.Core.General.Constants;
 using RepositoryPatternWithUOW.Core.Interfaces;
 using RepositoryPatternWithUOW.EF.Data;
 using System.Linq.Expressions;
@@ -17,18 +18,15 @@ namespace RepositoryPatternWithUOW.EF.Repositories
         {
             return _context.Set<T>().ToList();
         }
-
         public T GetById(int id)
         {
             return _context.Set<T>().Find(id);
         }
-
-        public async Task<T> GetByIdAsync(int id)
+        public T Find(Expression<Func<T, bool>> criteria)
         {
-            return await _context.Set<T>().FindAsync(id);
+            return _context.Set<T>().FirstOrDefault(criteria);
         }
-
-        public T Find(Expression<Func<T, bool>> match, string[] includes = null)
+        public T Find(Expression<Func<T, bool>> criteria, string[] includes)
         {
             var query = _context.Set<T>().AsQueryable();
 
@@ -36,31 +34,79 @@ namespace RepositoryPatternWithUOW.EF.Repositories
                 foreach (string include in includes)
                     query = query.Include(include);
 
-            return query.SingleOrDefault(match);
+            return query.FirstOrDefault(criteria);
         }
-
-        public IEnumerable<T> FindAll(Expression<Func<T, bool>> match) =>
-            _context.Set<T>().Where(match).ToList();
-
-        public IEnumerable<T> FindAll(Expression<Func<T, bool>> match, string[] includes)
+        public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria) =>
+            _context.Set<T>().Where(criteria).ToList();
+        public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, string[] includes)
         {
-            var query = _context.Set<T>().AsQueryable();
-
-            foreach (string include in includes)
-                query = query.Include(include);
-
-            return query.Where(match).ToList();
-        }
-
-        public IEnumerable<T> FindAll(Expression<Func<T, bool>> match, string[] includes, int skip, int take)
-        {
-            var query = _context.Set<T>().AsQueryable();
+            var query = _context.Set<T>().Where(criteria);
 
             if (includes != null)
                 foreach (string include in includes)
                     query = query.Include(include);
 
-            return query.Where(match).Skip(skip).Take(take).ToList();
+            return query.ToList();
+        }
+        public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, string[] includes, int skip, int take)
+        {
+            var query = _context.Set<T>().Where(criteria);
+
+            if (includes != null)
+                foreach (string include in includes)
+                    query = query.Include(include);
+
+            return query.Skip(skip).Take(take).ToList();
+        }
+        public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, string[] includes, int? skip, int? take, Expression<Func<T, object>> orderBy, string orderDirection)
+        {
+            var query = _context.Set<T>().Where(criteria);
+
+            if (includes != null)
+                foreach (string include in includes)
+                    query = query.Include(include);
+
+            if (skip.HasValue)
+                query = query.Skip(skip.Value);
+            if (take.HasValue)
+                query = query.Take(take.Value);
+
+            if (orderDirection == OrderBy.Ascending)
+                query = query.OrderBy(orderBy);
+            else if (orderDirection == OrderBy.Descending)
+                query = query.OrderByDescending(orderBy);
+
+            return query.ToList();
+        }
+
+        public int Count()
+        {
+            return _context.Set<T>().Count();
+        }
+        public int Count(Expression<Func<T, bool>> criteria)
+        {
+            return _context.Set<T>().Count(criteria);
+        }
+
+        public T Add(T entity)
+        {
+            _context.Set<T>().Add(entity);
+            return entity;
+        }
+        public IEnumerable<T> AddRange(IEnumerable<T> entities)
+        {
+            _context.Set<T>().AddRange(entities);
+            return entities;
+        }
+        public T Update(T entity)
+        {
+            _context.Set<T>().Update(entity);
+            return entity;
+        }
+        public void Delete(int id)
+        {
+            T entity = _context.Set<T>().Find(id);
+            _context.Set<T>().Remove(entity);
         }
     }
 }
